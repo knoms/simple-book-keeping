@@ -1,9 +1,7 @@
 const prompts = require('prompts');
 var fs = require('fs');
 const chalk = require('chalk');
-const { until } = require('async');
 const clear = require('clear');
-const { message } = require('prompt');
 // prompts.override(require('yargs').argv);
 var properties;
 var transactions;
@@ -12,22 +10,22 @@ var balance = 0;
 
 function fetchData(){
     properties = JSON.parse(fs.readFileSync('book.json', 'utf8'));
-    transactions = properties.transactions;
     sortTransactionsByNewest();
     calculateBalance();
 }
 
-function sortTransactionsByNewest(){
-    transactions.sort(function(a,b){
-        return new Date(b.date) - new Date(a.date);
+//Sorts transactions descending by date so that they are displayed in chronological order
+function sortTransactionsByNewest(){ 
+    properties.transactions.sort(function(a,b){ //sorts transactions based on the next line
+        return new Date(b.date) - new Date(a.date); //compares dates a and b for size
     });
 }
 
 function calculateBalance(){
-    balance = 0;
-    properties.transactions.forEach(element => {
-        if(isNumber(element.amount)){
-            balance += element.amount;
+    balance = 0;    //Initializes balance with 0 before calculating it
+    properties.transactions.forEach(element => {        //iterates over transactions in file
+        if(new Date(element.date) <= Date.now() && isNumber(element.amount)){   //makes sure that only past transactions are counted into the balance and that no corrupted amount is attempted to be added
+            balance += element.amount; //adds transaction to balance
         }
     });
 }
@@ -38,7 +36,7 @@ function calculateBalance(){
 //  Your program reacts with a confirmation that the transaction has been saved to file and returns the current budget
 //  Bonus: The user is able to insert multiple transactions at once
 
-const questions = [{
+const transactionQuestions = [{
     type: 'text',
     name: 'description',
     message: 'Enter a description for the transaction: ',
@@ -63,48 +61,18 @@ function recordTransaction(){
 (async () => {
 
     let questionPointer = 0;
-    let newQuestions = questions;
-
-    let answersTotal = {};
+    let newQuestions = transactionQuestions; // intitializes the questions to ask
+    let answersSoFar = {};
     
-    const onCancel = async (prompt, answersSoFar) => {
-        const onContinue = async (prompt, answer, answersSoFar) => { 
-            console.log(answer);
-            answersTotal = {...answersTotal, ...answersSoFar}
-            if(answer == true){
-                console.log("true");
-                mainMenu();
-            } else if(answer ==false){
-                console.log("else");
-                // await prompts(questions, { onCancel, onSubmit:onSubmit }).override(answersSoFar); 
-                questionPointer -=1;
-                return true;
-            }
-        };
-        response = await prompts({
-            type: 'toggle',
-            name: 'confirm',
-            message: 'Abort this transaction?',
-            initial: false,
-            active: 'yes, abort',
-            inactive: 'no, continue'
-        },{onSubmit:onContinue, onCancel:whatToDoNext(recordTransaction)});
-        if(!response.answer) {
-            questionPointer -=1;
-            return true;
-        }
-    }
-
     const onSubmit = async (prompt, answer, answersSoFar) => { 
-        ç
-        if(questionPointer == 2 && answersTotal.amount !== '' && answersTotal.amount !== null && answersTotal.date !== '' && answersTotal.date !== null){ 
-            writeTransaction(answersTotal);
+        if(questionPointer == 2 && answersSoFar.amount !== '' && answersSoFar.amount !== null && answersSoFar.date !== '' && answersSoFar.date !== null){ 
+            writeTransaction(answersSoFar);
             console.log("Transaction saved to file. Your new balance: " + balance + "€");
         }
         questionPointer += 1;
     }
     await prompts(newQuestions, {onSubmit});
-    whatToDoNext(recordTransaction);
+    whatToDoNext('recordTransaction');
 })();
 }
 
@@ -128,21 +96,20 @@ function writeTransaction(obj){
 async function showLastTransactions(x = 10){
     clear();
     var count = x;
-    console.log("Your Current Balance: " + balance + "€\n")
     console.log("______________________________________")
     console.log("Your last " + count + " transactions:\n")
-    while (count > 0){
         properties.transactions.forEach(element => {
                 if (count==0) return false;
-                console.log(element.date.slice(0,10) + ": " + element.description + " (" + element.amount + "€) ");
-                count-=1;
+                if(element.date) {
+                    console.log(element.date.slice(0,10) + ": " + element.description + " (" + element.amount + "€) ");
+                    count-=1
+                }
         });
-    }
-    console.log("\n");
-    whatToDoNext(showLastTransactions);
+    console.log("\nYour Current Balance: " + balance + "€\n")
+    whatToDoNext('showLastTransactions');
 }
 
-async function calculateBudget(){
+async function showTimeframe(){
     clear();
     response = await prompts([{
         type: 'date',
@@ -169,7 +136,7 @@ async function calculateBudget(){
     });
     console.log("_________________________________")
     console.log("Your Current Balance: " + balance + "€\n")
-    whatToDoNext(calculateBudget);
+    whatToDoNext('showTimeframe');
 }
 
 
@@ -181,32 +148,51 @@ var isNumber = function isNumber(value) {
     return typeof value === 'number' && isFinite(value);
 }
 
-async function whatToDoNext(func){
-    const firstOption = func == calculateBudget ? "Select different timeframe" : func == showLastTransaction ? "Show transactions in a certain timeframe" : func == recordTransaction ? "Add another transaction" : "Nothing";
-    const secondOption = func = showLastTransactions ? "Show a different number of transactions" : calculateBudget ? "Show the last transactions" : true;
-    var dynamicChoices = [{ title: firstOption, value: 0 }, {title: secondOption, value: 3}];
-    const standardChoices = [
-        { title: 'Go back to the menu', value: 1 },
-        { title: 'Exit', value: 2 },
-    ];
-    const combinedChoices = dynamicChoices.concat(standardChoices);
+async function whatToDoNext(functionPassed){
+    const choices = [{
+        title: functionPassed == 'showLastTransactions' ? "Show transactions in a certain timeframe" : 'showTimeframe' ? "Select a different timeframe": null,
+        value: 2  ,
+        show: functionPassed == 'showLastTransactions' || functionPassed == 'showTimeframe',
+    },
+    {
+        title: functionPassed == 'showLastTransactions' ? "Show a different number of transactions" : 'showTimeframe' ? "Show the most recent transactions" : null,
+        value: 3,
+        show: functionPassed == 'showLastTransactions' || functionPassed == 'showTimeframe',
+    },
+    {
+        title: functionPassed == 'recordTransaction' ? "Add another transaction" : null,
+        value: 4,
+        show: functionPassed == 'recordTransaction',
+    },
+    { 
+        title: 'Go back to the menu', 
+        value: 0, 
+        show: true },
+    { 
+        title: 'Exit', 
+        value: 1, 
+        show: true 
+    }].filter(option => option.show)
     const response = await prompts([
         {
             type: 'select',
             name: 'choice',
             message: 'What do you want to do next?',
-            choices: combinedChoices,
+            choices: choices,
         },
         {
             type: prev => prev == 3 ? 'number' : false,
             name: 'number',
             message: 'How many transactions do you want to show?',
         }
-    ], {onCancel:mainMenu});
-    if(response.choice == 0) func()
-    else if(response.choice == 1) mainMenu()
-    else if(response.choice == 2) exit()
-    else if(response.choice == 3) showLastTransactions(response.number)
+    ], {onCancel:mainMenu}).then((response) =>{
+        console.log(response.choice);
+        if(response.choice == 0) mainMenu()
+        else if(response.choice ==1) exit()
+        else if(response.choice == 2) showTimeframe()
+        else if(response.choice == 3) showLastTransactions(response.number)
+        else if(response.choice == 4) recordTransaction()
+    })    
 }
 
 function mainMenu(){
@@ -219,13 +205,13 @@ function mainMenu(){
             message: "Hi " + properties.name + "! Welcome to lmu-mmt bookkeeping. What do you want to do?",
             choices: [
                 { title: 'New Transaction', description: 'Record a new transaction', value: 0 },
-                { title: 'Calculate my budget', description: 'Show past transactions', value: 1 },
+                { title: 'Current Budget', description: 'Show past transactions', value: 1 },
                 { title: 'Exit', value: 2 },
             ],
         }
     ]).then((response) => {
         if(response.choice == 0) recordTransaction()
-        if(response.choice == 1) calculateBudget()
+        if(response.choice == 1) showLastTransactions()
         if(response.choice == 2) exit()
     }).catch((error) => {
             console.log('cancelled');
