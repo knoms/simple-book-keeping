@@ -7,7 +7,7 @@ Functionalities:\
 -Shows any number of last transactions or transactions within a selected timeframe\
 
 
-WINDOWS:
+WINDOWS (from 8):
 To run execute main_win by simply double clicking
 
 MAC:
