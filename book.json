@@ -1,1 +1,7 @@
-{"name":"Noah","id":"1234","created":2021,"transactions":[{"id":0,"date":"2021-05-09T18:57:02.837Z","description":"sadsa","amount":23},{"id":1,"date":"2021-05-09T19:37:57.174Z","description":"dsdsd","amount":23}]}
+{
+    "name": "LMU MMT Admission",
+    "id": "1234",
+    "created": 2021,
+    "transactions": [
+    ]
+}

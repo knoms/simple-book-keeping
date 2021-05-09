@@ -76,11 +76,11 @@ function recordTransaction(){
         nextId++;   //incrementing nextId to ensure the next transaction gets the correct id when adding another transaction before going to mainMenu and refetching nextId from file
     }
     clear();    //clears the console
-    (async () => {
+    (async () => {  //marking the following block as asynchronous, needed for awaiting the promise returned by prompts
 
-        let questionPointer = 0;
+        let questionPointer = 0;    //initializing a question pointer to be able to identify which question the onSubmit is executed in
         let newQuestions = transactionQuestions; // intitializes the questions to ask
-        let answersSoFar = {};
+        let answersSoFar = {};  //initilizing empty list of answers that will be filled with answers given
         
         const onSubmit = async (prompt, answer, answersSoFar) => { //defining optional onSubmit function to pass into propmts() to make sure writeTransaction gets executed after all questions are answered
             if(questionPointer == 2 && answersSoFar.amount !== '' && answersSoFar.amount !== null && answersSoFar.date !== '' && answersSoFar.date !== null){  //checks if onSubmit is executed after the third answer was submitted and if every information needed for writing the transaction has been received
@@ -95,8 +95,8 @@ function recordTransaction(){
     })();
 }
 
-//prints a certain number of the last transactions in descending order by date, as well as the current balance. the number of transactions supposed to be shown can get passed as an optional parameter, x = 10 transactions are set as default if no number gets passed as is the case when calling this function from the main menu
-async function showLastTransactions(count = 10){   
+//prints a certain number of the last transactions in descending order by date, as well as the current balance. the number of transactions supposed to be shown can get passed as an optional parameter, count = 10 transactions are set as default if no number gets passed as is the case when calling this function from the main menu
+function showLastTransactions(count = 10){ //Optional Parameter count, 10 is set by default
     clear();    //clears the console
     // let count = x;  // storing x in a temporary variable
     console.log("\nYour last " + count + " transaction(s):")  //Prints out a statement as a header for the transactions table, informs the user how many transactions he asked for
@@ -112,7 +112,7 @@ async function showLastTransactions(count = 10){
 }
 
 //Asks the user for the start and end date of a timeframe to show transactions within, then displays the found transactions and the current balance
-async function showTimeframe(){
+async function showTimeframe(){     //async needed because prompts returns a promise
     clear();    //clears the console
     response = await prompts([{  //initializes prompt of the following questions. 
         type: 'date',   //this question expects an input of the type date,
@@ -127,7 +127,7 @@ async function showTimeframe(){
         message: 'To: ', //Message displayed to the user
         mask: 'DD-MM-YYYY', //sets the format the date input will be asked for and stored as
         validate: to => to == ''|| to == null ? "Can't be empty" : true   //validates the user input. If to is empty or null a message will be shown to the user, prohibiting him from progressing without entering a valid value
-    }, {onCancel:mainMenu}]);
+    }, {onCancel:mainMenu}]);       //returning to mainMenu when cancelling with ESC
     const from = new Date(response.from.setHours(12,0,0,0));    //intializes a date object from the "from" property the user entered. As Date() always stores the exact moment in time, including hours, minutes, seconds and milliseconds,  .setHours() is used to set the entered time to 12pm, to ensure that comparing from & to with the time of each transaction (see 2 lines below) takes into account only the day
     const to = new Date(response.to.setHours(12,0,0,0)); //intializes a date object from the "to" property the user entered. As Date() always stores the exact moment in time, including hours, minutes, seconds and milliseconds,  .setHours() is used to set the entered time to exactly 12pm, to ensure that comparing from & to with the time of each transaction (see line below) takes into account only the day
     const transactionsInTimeframe = account.transactions.filter(e => new Date(e.date).setHours(12,0,0,0) <= to && new Date(e.date).setHours(12,0,0,0) >= from); //filtering for all the transactions included in the time frame entered above and storing it in the timeframe. For that matter new Date() intializes Date objects and .setHours() sets the time to exactly 12pm to only take into account the day of a transaction. This way the actual time of the transaction is preserved in the log file but only ignored here.
@@ -191,7 +191,7 @@ function whatToDoNext(context){
             name: 'number',     //inquiring the number of transactions the user wants to show
             message: 'How many transactions do you want to show?',  //message prompted to the user
         }
-    ], {onCancel:mainMenu}).then((response) =>{ //when the usermakes his choice and selects an option, the then block is executed, passing on the users choice through the response object
+    ], {onCancel:mainMenu}).then((response) =>{ //when the usermakes his choice and selects an option, the then block is executed, passing on the users choice through the response object, executing mainMenu when the user cancels with ESC
         if(response.choice == 0) mainMenu() //handling the users choice by checking the choice value and executing the correct function
         else if(response.choice ==1) exit() //handling the users choice by checking the choice value and executing the correct function
         else if(response.choice == 2) showTimeframe()   //handling the users choice by checking the choice value and executing the correct function
@@ -201,10 +201,10 @@ function whatToDoNext(context){
 }
 
 //prompts the main menu, asking the user to choose between adding a transaction, showing the last transactions and exiting the program. No parameter expected. Will be called whenever the user starts the program and when he asks to return to the main menu.
-async function mainMenu(){
+async function mainMenu(){  //async needed because response is returning a promise
     clear();    //clears the console
     fetchData(); //refetching data to prevent dates from being displayed in different format after adding transaction
-    const response = await prompts([  //executes the prompts, asking the user for input
+    const response = await prompts([  //executes the prompts, asking the user for input (asynchronous)
         {
             type: 'select', //type of the prompt is select between multiple choices
             name: 'choice', //the name this user input will later be refered to (see below)
