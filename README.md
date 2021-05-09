@@ -1,10 +1,10 @@
 # simple-book-keeping
 
-Welcome to lmu-mmt simple book keeping, a CLI bookkeeping tool.
-Functionalities:
--Reads and writes to an account file in the system, allowing to record and store transactions
--Calculates current budget based on the current date
--Shows any number of last transactions or transactions within a selected timeframe
+Welcome to lmu-mmt simple book keeping, a CLI bookkeeping tool.\
+Functionalities:\
+-Reads and writes to an account file in the system, allowing to record and store transactions\
+-Calculates current budget based on the current date\
+-Shows any number of last transactions or transactions within a selected timeframe\
 
 
 WINDOWS:
