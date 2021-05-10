@@ -7,8 +7,12 @@ Functionalities:\
 -Shows any number of last transactions or transactions within a selected timeframe\
 
 
-WINDOWS (from 8):
-To run execute main_win by simply double clicking
+WINDOWS (7 not supported):
+To run execute main_win by simply double clicking   (might require admin user)
 
 MAC:
-To run, open the terminal, navigate to this folder and run main_mac by executing "./main_mac" in the terminal folder
+To run, open the terminal, navigate to this folder and run main_mac by executing "./main_mac" in the terminal folder (might require admin user)
+
+
+ALTERNATIVE:
+Run main.js using node by executing "node main.js" in the terminal, requires node installed
